@@ -1,0 +1,31 @@
+---
+title: "Project Writeup"
+author: "Edward DeWane"
+date: "2024-02-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**Introduction: **
+	The Notre Dame MSBA program will spend the first week of March in Chicago for “Grow Irish Week”, where students will work on a project for a local company, visit other companies to network, and most importantly, receive a per diem. To help my fellow classmates most efficiently waste their per diem on alcohol, I am creating a text classification model based on reviews of popular craft beers in Chicago. My classmates can use it by entering a hypothetical review of a beer they would like to drink, and it will return the beer whose reviews most match theirs. 
+	
+**Rationale: **
+	Nothing is worse than ordering a new beer and disliking it. While the workers at a brewery might sing its praises, they are being paid to do so. Reviewers on RateBeer.com do it for the love of the sport, so their reviews and opinions are not subject to any biases. However, it is not practical to read every review for every beer, so by using a text classification model, I can input my ideal beer, and get a recommendation for its best match among popular Chicago beers. This takes the guesswork out of deciding what to drink, and hopefully leads me to drinking only beers I enjoy.
+
+**Methodology: **
+  I scraped reviews from RateBeers.com. They have an advanced search function that allowed me to get the thirty most rated beers in Illinois, which were conveniently all in Chicago. I scraped them and their links with RSelenium. *Code at Scraping_RateBeer_Link_Getting.html*
+  
+  RSelenium sucks, so I switched to python to get the actual reviews. I used selenium to scrape the reviews. I got 495 from each, since the least reviewed beer had just over 500, and pages came in sets of 15 reviews. I got equal numbers of comments from each to not bias the model. One downside of my scraping is that I was unable to get the whole review for longer reviews, as parts of them were blocked behind a very vexing “show more” button. However, I believe the model will still function with just parts of the review, because they are still long enough to be intelligible, and many reviews were short enough to get the whole thing. *Code at actuallygoodreviewscraper.html*
+  
+  I filtered out non-English reviews, since all the reviews from my friends will be in English. I also removed the ellipses that appear at the end of many reviews. *Code at Beer-Review-Cleaning.html*
+  
+  I then trained a text classification model on the reviews, using 80% to train the model, and 20% to test. I used the DistilBertModel and DistilBertTokenizer, with the parameters that were used for the lyric classification model we did in class. I had neither the knowledge nor the time to properly tune this model, but that is something I wish to do in the future. After training, I tested the accuracy of it, and found it to be 48.8%. This is not wonderful, but several of the beers are very similar to each other, so I wondered if it was having trouble distinguishing between different beers of the same type. *Code at ReviewClassifier.html*
+  
+  I built a second text classification model, this time trying to see if it could accurately predict the type of beer, stout, Saison, etc. I followed the same procedure as before, and this model had an accuracy of 68%, significantly higher than the other, but still not terrific. I think either the models both need some parameter tuning, or that these reviews may be too similar to each other for their to ever be a high accuracy. *Code at Beer_Type_recommender.html*
+  
+**Results: **
+	The model is not very accurate at correctly classifying beers, but it does a reasonably good job at giving suggestions. For example, inserting a review that says “It is so chocolatey and sweet and rich” returns Two Brothers Northwind Imperial Stout, which is chocolatey and rich. A review that says “Hoppiest darn beer I’ve ever had” returns Half Acre Daisy Cutter, an American Pale Ale. It is not perfect though. Reviews with negations tend to return the opposite of what you would expect. A review that simply says “This is not hoppy” returns Two Brothers Hop Centric Double IPA, an extremely hoppy beer. I expect this is because the model is looking for common words without the understanding of negations, but I do not understand it enough to be sure. There is certainly room for improvement, but I am satisfied with the results.

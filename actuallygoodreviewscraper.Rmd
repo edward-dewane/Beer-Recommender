@@ -1,0 +1,57 @@
+---
+title: "Untitled"
+author: "Edward DeWane"
+date: "2024-02-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+import pandas as pd
+import numpy as np
+import selenium
+
+beertable = pd.read_csv("beers.csv", sep = ',')
+
+
+```
+
+
+```{python}
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+import time
+
+beersandreviews = pd.DataFrame(columns = ['beername','review'])
+#if i use len(beertable) it starts j at 29 for some reason
+for j in range(0,30):
+  link = beertable['link'][j]
+#the least reviewed beer has just over 500 comments, so I will get 33 pages of comments from each for a total of 495 for every beer.
+  driver = webdriver.Chrome()
+  driver.get(link)
+  time.sleep(5)
+  close_button = driver.find_element(By.CSS_SELECTOR, "button[class='onetrust-close-btn-handler onetrust-close-btn-ui banner-close-button ot-close-icon']")
+  close_button.click()
+  for i in range(33):
+    comments_new = driver.find_elements(
+    By.CSS_SELECTOR, 
+    ".BeerReviewListItem___StyledDiv-iilxqQ.kuBzmO.fd-c.fa-s.px-4.fb-0 .LinesEllipsis"
+    )
+    driver.execute_script("window.scrollTo(0,3500);")
+    for k in range(0, len(comments_new)):
+      beersandreviews.loc[len(beersandreviews.index)]=[beertable['beername'][j],comments_new[k].text]
+    next_button = driver.find_elements(By.CSS_SELECTOR, ".MuiTablePagination-actions .MuiButtonBase-root.MuiIconButton-root.MuiIconButton-colorInherit")[1]
+    next_button.click()
+    time.sleep(1)
+```
+
+
+```{python}
+beersandreviews.to_csv('beerandreviews.csv', index=False) 
+
+```
+Omg it worked.

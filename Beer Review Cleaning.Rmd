@@ -1,0 +1,35 @@
+---
+title: "Cleaning"
+author: "Edward DeWane"
+date: "2024-02-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+reviews <- read.csv("beerandreviews.csv")
+
+#I am not gonna do much cleaning here, just getting rid of ellipses.
+
+reviews$review <- gsub("…", "", reviews$review)
+#I will also get rid of non-english reviews
+
+library(textcat)
+
+reviews$language <- textcat(reviews$review)
+reviews$language <- as.factor(reviews$language)
+summary(reviews$language)
+#reviews in latin?! that is odd.
+#anyway lets just get English ones
+
+englishreviews <- reviews[reviews$language == "english",]
+
+write.csv(englishreviews, "englishreviews.csv")
+```
+
+```{r}]
+```
+

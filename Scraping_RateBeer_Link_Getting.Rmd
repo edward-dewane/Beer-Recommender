@@ -1,0 +1,106 @@
+---
+title: "Scraping RateBeer Link Getting"
+author: "Edward DeWane"
+date: "2024-02-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I am scraping the most popular beers in Illinois from RateBeer.com They have an API, but I am waiting on approval for a key, and I can't wait that long to do my project.
+
+```{r}
+library(RSelenium)
+library(tidyverse)
+library(netstat)
+library(rvest)
+library(data.table)
+```
+
+I have to use Selenium to navigate and get the things I want :(
+
+```{r}
+rs_driver_object <- rsDriver(browser = "chrome"
+                             ,verbose = F
+                             ,port = free_port())
+
+remDr <- rs_driver_object$client
+
+#open browser
+remDr$open()
+
+#go to website
+
+remDr$navigate("https://www.ratebeer.com/search.php")
+
+#get it to search for beers in Illinois
+
+countrybutton <- remDr$findElement(using = "xpath", '//*[@id="CountryID"]')
+countrybutton$clickElement()
+countrybutton$sendKeysToElement(list("United States", key = 'enter'))
+
+#select illinois as state
+
+statebutton <- remDr$findElement(using = "xpath", '//*[@id="StateID"]')
+statebutton$clickElement()
+statebutton$sendKeysToElement(list("Illinois", key = 'enter'))
+
+#get it to sort by most ratings
+
+mostratingsbutton <- remDr$findElement(using = "xpath", '/html/body/div[1]/div[2]/div[2]/form/p[5]/input[1]')
+
+#this button doesnt like being clicked when knitting and it ruins all the links so I have to click it a bunch of times to get it to work
+mostratingsbutton$clickElement()
+mostratingsbutton$clickElement()
+mostratingsbutton$clickElement()
+mostratingsbutton$clickElement()
+mostratingsbutton$clickElement()
+mostratingsbutton$clickElement()
+
+#pressing enter sends us to the search results
+mostratingsbutton$sendKeysToElement(list(key = 'enter'))
+
+
+```
+
+Now we can get this table and all it's links!
+
+```{r}
+data_table <- remDr$findElement(using = "css", "#container > table > tbody")
+
+data_table_html <- data_table$getPageSource()
+
+page <- read_html(data_table_html %>% unlist())
+
+df <- html_table(page)
+
+beerstable <- as.data.frame(df[[3]])
+
+#this picked up some extra junk so let's get rid of it
+
+beerstable <- beerstable[5:34,1:3]
+colnames(beerstable) <- c("beername", "score", "reviews")
+
+beerstable$link <- "a"
+
+for(i in 5:34){
+  path <- paste0('//*[@id="container"]/table/tbody/tr[',i,']/td[1]/span/a')
+thingy <-   remDr$findElement(using = "xpath", path)
+link <-  thingy$getElementAttribute("href")[[1]]
+
+beerstable$link[i-4] <- link
+  
+  
+}
+
+save(beerstable, file = "beersandlinks.RData")
+
+system("taskkill /im java.exe /f")
+
+
+write.csv(beerstable, file = "beers.csv")
+
+```
+
